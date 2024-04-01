@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
     <meta name="generator" content="Hugo 0.84.0">
-    <title>HOME WORK 12</title>
+    <title>HOME WORK 13</title>
     <link href="{{ url_for('static', path='styles.css') }}" rel="stylesheet">
     <link rel="icon" href="{{ url_for('static', path='/favicon.ico') }}">
     <!-- Bootstrap core CSS -->
@@ -40,12 +40,12 @@
         <header class="mb-auto">
             <div>
                 <a class="float-md-start mb-0 nav-link"  target="_blank"
-                        href="#">GoIT_WEB_HW_12</a>
+                        href="#">GoIT_WEB_HW_13</a>
                 <nav class="nav nav-masthead justify-content-center float-md-end">
                     <a class="nav-link active" aria-current="page" 
                     href="#">Home</a>
                     <a class="nav-link"
-                        href="https://github.com/SiracencoSerghei/Py_WEB_11" target="_blank" rel="noopener noreferrer">Features</a>
+                        href="https://github.com/SiracencoSerghei/Py_WEB_12" target="_blank" rel="noopener noreferrer">Features</a>
                     <a class="nav-link"
                         href="https://www.linkedin.com/in/siracenco-serghei/" target="_blank" rel="noopener noreferrer">Contact</a>
                 </nav>
@@ -53,10 +53,10 @@
         </header>
 
           <main class="px-3">
-    <h1>{{tilte}}</h1>
-    <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel">
-      <div class="carousel-indicators">
-        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0"
+    <h1>{{title}}</h1>
+            <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0"
                         class="active" aria-current="true" aria-label="Slide 1"></button>
         <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1"
                         aria-label="Slide 2"></button>
@@ -78,12 +78,12 @@
                         aria-label="Slide 10"></button>
         <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="10"
                         aria-label="Slide 11"></button>
-              </div>
-      <div class="carousel-inner" style="padding: 3.125rem; height: 15.625rem;">
-        <div class="carousel-item active">
+                </div>
+                <div class="carousel-inner" style="padding: 3.125rem; height: 15.625rem;">
+                    <div class="carousel-item active">
           <h4>Мета цього домашнього завдання</h4>
           <p class="lead">
-            У цьому домашньому завданні ми продовжуємо доопрацьовувати наш REST API додаток із домашнього <a target="_blank" href="https://github.com/Goit-Home-Works/Py_WEB_11">завдання 11</a>
+            У цьому домашньому завданні ми продовжуємо доопрацьовувати наш REST API додаток із домашнього <a target="_blank" href="https://github.com/Goit-Home-Works/Py_WEB_12">завдання 12</a>
          </p>
         </div>
         <div class="carousel-item">
@@ -95,68 +95,80 @@
         <div class="carousel-item">
           <h4>Завдання:</h4>
           <p class="lead">
-            Реалізуйте механізм авторизації за допомогою JWT токенів, щоб усі операції з контактами проводилися тільки зареєстрованими користувачами
+            - Реалізуйте механізм верифікації електронної пошти зареєстрованого користувача.
           </p>
         </div>
         <div class="carousel-item">
           <h4>Завдання:</h4>
           <p class="lead">
-            Користувач має доступ тільки до своїх операцій з контактами
+            - Обмежуйте кількість запитів до своїх маршрутів контактів. Обов'язково обмежте швидкість - створення контактів для користувача.
           </p>
-        </div>  
+        </div>
+        <div class="carousel-item">
+          <h4>Завдання:</h4>
+          <p class="lead">
+            - Увімкніть CORS для свого REST API.
+          </p>
+        </div>
+        <div class="carousel-item">
+          <h4>Завдання:</h4>
+          <p class="lead">
+            - Реалізуйте можливість оновлення аватара користувача. Використовуйте сервіс Cloudinary.
+          </p>
+        </div>
         <div class="carousel-item">
           <h4> Загальні вимоги:</h4>
           <p class="lead">
-            1. При реєстрації, якщо користувач вже існує з таким email, сервер поверне помилку HTTP 409 Conflict.</p>
+            1. - Усі змінні середовища повинні зберігатися у файлі .env. Всередині коду не повинно бути конфіденційних даних у «чистому» вигляді.</p>
         </div> 
         <div class="carousel-item">
           <h4> Загальні вимоги:</h4>
           <p class="lead">
-            2. Сервер хешує пароль і не зберігає його у відкритому вигляді в базі даних.</p>
+            2. - Для запуску всіх сервісів і баз даних у застосунку використовується Docker Compose.</p>
         </div>
         <div class="carousel-item">
-          <h4> Загальні вимоги:</h4>
+          <h4> Додаткове завдання:</h4>
           <p class="lead">
-            3. У разі успішної реєстрації користувача сервер повинен повернути HTTP статус відповіді 201 Created та дані нового користувача.</p>
+            - Реалізуйте механізм кешування за допомогою бази даних Redis. Виконайте кешування поточного користувача під час авторизації.</p>
         </div>
         <div class="carousel-item">
-          <h4> Загальні вимоги:</h4>
+          <h4> Додаткове завдання:</h4>
           <p class="lead">
-            4. Для всіх операцій POST створення нового ресурсу, сервер повертає статус 201 Created.</p>
+            - Реалізуйте механізм скидання паролю для застосунку REST API.</p>
         </div>
         <div class="carousel-item">
-          <h4> Загальні вимоги:</h4>
+          <h4> Друга частина:</h4>
           <p class="lead">
-            5. При операції POST - аутентифікація користувача, сервер приймає запит із даними користувача (email, пароль) у тілі запиту.</p>
+            - У цьому домашньому завданні необхідно доопрацювати застосунок Django із домашнього завдання 10.</p>
         </div>
         <div class="carousel-item">
-          <h4> Загальні вимоги:</h4>
+          <h4> Завдання:</h4>
           <p class="lead">
-            6. Якщо користувач не існує або пароль не збігається, повертається помилка HTTP 401 Unauthorized.</p>
+            - Реалізуйте механізм скидання паролю для зареєстрованого користувача.</p>
         </div>
         <div class="carousel-item">
-          <h4> Загальні вимоги:</h4>
+          <h4> Завдання:</h4>
           <p class="lead">
-            7. Механізм авторизації за допомогою JWT токенів реалізований парою токенів: токена доступу access_token і токен оновлення refresh_token.</p>
+            - Усі змінні середовища повинні зберігатися у файлі .env та використовуватися у файлі settings.py.</p>
         </div>                   
-      </div>
-      <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators"
-                    data-bs-slide="prev">
-        <span class="carousel-control-prev-icon" style="margin-right: 9.375rem;" aria-hidden="true"></span>
-        <span class="visually-hidden">Previous</span>
-      </button>
-      <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators"
-                    data-bs-slide="next">
-        <span class="carousel-control-next-icon" style="margin-left: 9.375rem;" aria-hidden="true"></span>
-        <span class="visually-hidden">Next</span>
-      </button>
-    </div>
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators"
+                        data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" style="margin-right: 9.375rem;" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators"
+                        data-bs-slide="next">
+                    <span class="carousel-control-next-icon" style="margin-left: 9.375rem;" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
     <a href="docs/" class="btn btn-lg btn-secondary fw-bold border-white bg-white" target="_blank" rel="noopener noreferrer">API DOC</a>
   </main>
 
         <footer class="mt-auto text-white-50">
             <p><a class="btn btn-sm btn-success bg-transparent border-0"" href="https://github.com/SiracencoSerghei/"
-                    target="_blank">Goit WEB HW-11 ©Sergio</a></p>
+                    target="_blank">Goit WEB HW-13 ©Sergio</a></p>
         </footer>
     </div>
 
