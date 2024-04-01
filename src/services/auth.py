@@ -55,3 +55,18 @@ class Auth(AuthToken):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials",
             )
+
+    def create_email_token(
+        self, data: dict, expires_delta: Optional[float] = None
+    ) -> str | None:
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.now(timezone.utc) + timedelta(seconds=expires_delta)
+        else:
+            expire = datetime.now(timezone.utc) + timedelta(days=7)
+        expire = expire.replace(tzinfo=timezone.utc)
+        to_encode.update(
+            {"iat": datetime.now(timezone.utc), "exp": expire, "scope": "email_token"}
+        )
+        encoded_token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
+        return encoded_token

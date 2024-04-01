@@ -9,6 +9,7 @@ from fastapi import (
     Security,
     status,
     Cookie,
+    BackgroundTasks,
 )
 from fastapi.security import (
     HTTPAuthorizationCredentials,
@@ -39,13 +40,16 @@ SET_COOKIES = False
     response_model_exclude_none=True,
     status_code=status.HTTP_201_CREATED,
 )
-async def signup(body: UserModel, db: Session = Depends(get_db)):
+async def signup(body: UserModel, background_tasks: BackgroundTasks, request: Request, db: Session = Depends(get_db)):
     new_user = await repository_auth.signup(body=body, db=db)
     if new_user is None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Account already exists"
         )
-    return new_user
+    background_tasks.add_task(send_email, str(new_user.email), str(new_user.username), str(request.base_url))
+    
+    return {"user": new_user, "detail": "User successfully created. Check your email for confirmation."}
+
 
 
 # Annotated[OAuth2PasswordRequestForm, Depends()]
