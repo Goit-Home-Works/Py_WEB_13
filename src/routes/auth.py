@@ -13,7 +13,7 @@ from fastapi import (
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBasicCredentials,
-    HTTPBearer,
+    HTTPBearer, OAuth2PasswordRequestForm,
 )
 from sqlalchemy.orm import Session
 
@@ -24,6 +24,7 @@ from schemas.user import UserResponse, UserModel
 from repository import auth as repository_auth
 from repository import users as repository_users
 
+from src.schemas.auth import AccessTokenRefreshResponse
 
 router = APIRouter(prefix="", tags=["Auth"])
 
@@ -49,10 +50,10 @@ async def signup(body: UserModel, db: Session = Depends(get_db)):
 
 # Annotated[OAuth2PasswordRequestForm, Depends()]
 # auth_response_model = Depends()
-@router.post("/login", response_model=repository_auth.auth_service.token_response_model)
+@router.post("/login", response_model=AccessTokenRefreshResponse)
 async def login(
     response: Response,
-    body: Annotated[repository_auth.auth_service.auth_response_model, Depends()],
+    body: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db),
 ):
     token = await repository_auth.login(
@@ -73,6 +74,7 @@ async def login(
                 }
             )
         raise HTTPException(**exception_data)
+
     refresh_token = token.get("refresh_token")
     if refresh_token:
         await repository_auth.update_refresh_token(
