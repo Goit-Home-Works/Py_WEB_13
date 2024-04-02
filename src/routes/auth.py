@@ -1,4 +1,3 @@
-
 from typing import Annotated, Any, List
 from fastapi import (
     APIRouter,
@@ -14,18 +13,19 @@ from fastapi import (
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBasicCredentials,
-    HTTPBearer, OAuth2PasswordRequestForm,
+    HTTPBearer,
+    OAuth2PasswordRequestForm,
 )
 from sqlalchemy.orm import Session
 
 from db.database import get_db
 from db.models import User
 from schemas.user import UserResponse, UserModel
-
+from services.auth import auth_service
 from repository import auth as repository_auth
 from repository import users as repository_users
-
-from src.schemas.auth import AccessTokenRefreshResponse
+from schemas.auth import AccessTokenRefreshResponse
+from services.emails import send_email
 
 router = APIRouter(prefix="", tags=["Auth"])
 
@@ -40,16 +40,25 @@ SET_COOKIES = False
     response_model_exclude_none=True,
     status_code=status.HTTP_201_CREATED,
 )
-async def signup(body: UserModel, background_tasks: BackgroundTasks, request: Request, db: Session = Depends(get_db)):
+async def signup(
+    body: UserModel,
+    bt: BackgroundTasks,
+    request: Request,
+    db: Session = Depends(get_db),
+):
     new_user = await repository_auth.signup(body=body, db=db)
     if new_user is None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Account already exists"
         )
-    background_tasks.add_task(send_email, str(new_user.email), str(new_user.username), str(request.base_url))
-    
-    return {"user": new_user, "detail": "User successfully created. Check your email for confirmation."}
+    bt.add_task(
+        send_email, str(new_user.email), str(new_user.username), str(request.base_url)
+    )
 
+    return {
+        "user": new_user,
+        "detail": "User successfully created. Check your email for confirmation.",
+    }
 
 
 # Annotated[OAuth2PasswordRequestForm, Depends()]
@@ -310,3 +319,18 @@ async def refresh_token(
         "expire_refresh_token": expire_refresh_token,
         "token_type": "bearer",
     }
+
+
+@router.get("/confirmed_email/{token}")
+async def confirmed_email(token: str, db: Session = Depends(get_db)):
+    email = auth_service.get_email_from_token(token)
+    if email:
+        user = await repository_users.get_user_by_email(email, db)
+        if user:
+            if bool(user.confirmed):
+                return {"message": "Your email is already confirmed"}
+            await repository_users.confirmed_email(email, db)
+            return {"message": "Email confirmed"}
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST, detail="Verification error"
+    )
