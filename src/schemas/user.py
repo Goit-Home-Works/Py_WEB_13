@@ -25,3 +25,11 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class User(BaseModel):
+    id: int
+    username: str
+    email: str
+    avatar: str
+    role: str

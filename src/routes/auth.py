@@ -5,6 +5,7 @@ from fastapi import (
     HTTPException,
     Request,
     Response,
+    Query,
     Security,
     status,
     Cookie,
@@ -40,6 +41,34 @@ SET_COOKIES = False
     response_model_exclude_none=True,
     status_code=status.HTTP_201_CREATED,
 )
+# async def signup(
+#     body: UserModel,
+#     bt: BackgroundTasks,
+#     request: Request,
+#     db: Session = Depends(get_db),
+# ):
+#     new_user = await repository_auth.signup(body=body, db=db)
+#     print(f"New user details: id={new_user.id}, username={new_user.username}, email={new_user.email}, avatar={new_user.avatar}, role={new_user.role}")
+#     if new_user is None:
+#         raise HTTPException(
+#             status_code=status.HTTP_409_CONFLICT, detail="Account already exists"
+#         )
+#     bt.add_task(
+#         send_email, str(new_user.email), str(new_user.username), str(request.base_url)
+#     )
+
+#     return {
+#         "user": new_user,
+#         "detail": "User successfully created. Check your email for confirmation.",
+#     }
+
+
+@router.post(
+    "/signup",
+    response_model=UserResponse,
+    response_model_exclude_none=True,
+    status_code=status.HTTP_201_CREATED,
+)
 async def signup(
     body: UserModel,
     bt: BackgroundTasks,
@@ -47,10 +76,28 @@ async def signup(
     db: Session = Depends(get_db),
 ):
     new_user = await repository_auth.signup(body=body, db=db)
+    print(
+        f"New user details: id={new_user.id}, username={new_user.username}, email={new_user.email}, avatar={new_user.avatar}, role={new_user.role}"
+    )
     if new_user is None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Account already exists"
         )
+
+    try:
+        user = await repository_users.get_user_by_name(body.username, db)
+        print(f"get_user_by_name2: ", user)
+        if user is not None:
+            user_id = user.id
+        else:
+            user_id = None  # Assign a default value if user is None
+    except Exception:
+        print("ERROR")
+        user_id = None  # Assign a default value in case of exception
+
+    if user_id is not None:
+        new_user.id = user_id
+
     bt.add_task(
         send_email, str(new_user.email), str(new_user.username), str(request.base_url)
     )
@@ -330,7 +377,7 @@ async def confirmed_email(token: str, db: Session = Depends(get_db)):
             if bool(user.confirmed):
                 return {"message": "Your email is already confirmed"}
             await repository_users.confirmed_email(email, db)
-            return {"message": "Email confirmed"}
+            return {"message": "Email confirmed successfully"}
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST, detail="Verification error"
     )

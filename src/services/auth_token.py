@@ -2,24 +2,47 @@ from datetime import datetime, timedelta, timezone
 import os
 from dotenv import load_dotenv
 
-from typing import Optional
+from typing import Optional, Any
 
 from passlib.context import CryptContext
 
 from jose import JWTError, jwt
 
+import hashlib
+import secrets
+
 load_dotenv()
+# class PassCrypt:
+#     pwd_context: CryptContext
+
+#     def __init__(self, scheme: str = "bcrypt") -> None:
+#         self.pwd_context = CryptContext(schemes=[scheme], deprecated="auto")
+#         # print("init PassCrypt ", scheme, self.pwd_context)
+
+#     def verify_password(self, plain_password, hashed_password):
+#         return self.pwd_context.verify(plain_password, hashed_password)
+
+#     def get_password_hash(self, password: str):
+#         return self.pwd_context.hash(password)
+
+
 class PassCrypt:
-    pwd_context: CryptContext
+    def __init__(self, algorithm: str = "sha256") -> None:
+        self.algorithm = algorithm
 
-    def __init__(self, scheme: str = "bcrypt") -> None:
-        self.pwd_context = CryptContext(schemes=[scheme], deprecated="auto")
-        
     def verify_password(self, plain_password, hashed_password):
-        return self.pwd_context.verify(plain_password, hashed_password)
+        return hashed_password == self.get_password_hash(
+            plain_password, hashed_password
+        )
 
-    def get_password_hash(self, password: str):
-        return self.pwd_context.hash(password)
+    def get_password_hash(self, password: str, salt: Optional[str] = None):
+        if salt is None:
+            salt = secrets.token_hex(16)  # Generate a random salt
+        salted_password = password + salt
+        hashed_password = hashlib.new(
+            self.algorithm, salted_password.encode()
+        ).hexdigest()
+        return hashed_password, salt
 
 
 class AuthToken(PassCrypt):
@@ -28,13 +51,11 @@ class AuthToken(PassCrypt):
 
     # constructor
     def __init__(
-        self, init_key: str | None = None, init_algorithm: str = "HS512"
+        self, secret_key: str | None = None, algorithm: str | None = None
     ) -> None:
-        self.SECRET_KEY: str = (
-            init_key if init_key else os.getenv("TOKEN_SECRET_KEY", "")
-        )
-        assert self.SECRET_KEY, "MISSED TOKEN SECRET_KEY"
-        self.ALGORITHM = init_algorithm
+        assert secret_key, "MISSED SECRET_KEY"
+        self.SECRET_KEY: str = str(secret_key)
+        self.ALGORITHM: str = str(algorithm or "HS256")
         assert self.ALGORITHM, "MISSED ALGORITHM"
         super().__init__()
 
@@ -51,11 +72,10 @@ class AuthToken(PassCrypt):
                 return email
         except JWTError as e:
             return None
-        return None
-            
+
     # define a function to generate a new access token
-    async def create_access_token(
-        self, data: dict, expires_delta: Optional[float] = None
+    def create_access_token(
+        self, data: dict[str, Any], expires_delta: Optional[float] = None
     ) -> tuple[str, datetime]:
         to_encode = data.copy()
         if expires_delta:
@@ -69,7 +89,7 @@ class AuthToken(PassCrypt):
         encoded_access_token = self.encode_jwt(to_encode)
         return encoded_access_token, expire
 
-    async def decode_access_token(self, access_token: str) -> str | None:
+    def decode_access_token(self, access_token: str) -> str | None:
         try:
             payload = jwt.decode(
                 access_token, self.SECRET_KEY, algorithms=[self.ALGORITHM]

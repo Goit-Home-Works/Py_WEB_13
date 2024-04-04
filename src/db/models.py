@@ -29,6 +29,10 @@ class Contact(Base):
 
 class Role(enum.Enum):
     admin: str = "admin"  # type: ignore
+    Webinar Chat
+    
+    
+    
     moderator: str = "moderator"  # type: ignore
     user: str = "user"  # type: ignore
 

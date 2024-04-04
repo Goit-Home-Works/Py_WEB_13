@@ -5,6 +5,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 
+from pydantic_settings import BaseSettings
 from config.config import settings
 from db.database import get_db
 from db.models import User
@@ -36,12 +37,12 @@ class Auth(AuthToken):
     ) -> tuple[str, datetime]:
         to_encode = data.copy()
         if expires_delta:
-            expire = datetime.utcnow() + timedelta(seconds=expires_delta)
+            expire = datetime.now(timezone.utc) + timedelta(seconds=expires_delta)
         else:
-            expire = datetime.utcnow() + timedelta(days=7)
+            expire = datetime.now(timezone.utc) + timedelta(days=7)
         expire = expire.replace(tzinfo=timezone.utc)
         to_encode.update(
-            {"iat": datetime.utcnow(), "exp": expire, "scope": "refresh_token"}
+            {"iat": datetime.now(timezone.utc), "exp": expire, "scope": "refresh_token"}
         )
         encoded_refresh_token = jwt.encode(
             to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM
@@ -71,12 +72,12 @@ class Auth(AuthToken):
     ) -> str | None:
         to_encode = data.copy()
         if expires_delta:
-            expire = datetime.utcnow() + timedelta(seconds=expires_delta)
+            expire = datetime.now(timezone.utc) + timedelta(seconds=expires_delta)
         else:
-            expire = datetime.utcnow() + timedelta(days=7)
+            expire = datetime.now(timezone.utc) + timedelta(days=7)
         expire = expire.replace(tzinfo=timezone.utc)
         to_encode.update(
-            {"iat": datetime.utcnow(), "exp": expire, "scope": "email_token"}
+            {"iat": datetime.now(timezone.utc), "exp": expire, "scope": "email_token"}
         )
         encoded_token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
         return encoded_token

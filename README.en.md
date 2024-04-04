@@ -32,6 +32,15 @@ In this homework assignment, we continue to refine our Django application based 
 
 ## Execution
 
+Remember to set your SendGrid API key in the SENDGRID_API_KEY environment variable before running the script. If you're using a Unix-like system, you can set it like this:
+
+```bash
+echo "export SENDGRID_API_KEY='YOUR_API_KEY'" > sendgrid.env
+echo "sendgrid.env" >> .gitignore
+source ./sendgrid.env
+```
+Replace 'YOUR_API_KEY' with your actual SendGrid API key.
+
 To run the program, copy and paste the following command into your terminal:
 
 ```bash

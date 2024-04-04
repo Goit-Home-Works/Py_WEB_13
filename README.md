@@ -32,6 +32,15 @@
 
 ## Виконання
 
+Remember to set your SendGrid API key in the SENDGRID_API_KEY environment variable before running the script. If you're using a Unix-like system, you can set it like this:
+
+```bash
+echo "export SENDGRID_API_KEY='YOUR_API_KEY'" > sendgrid.env
+echo "sendgrid.env" >> .gitignore
+source ./sendgrid.env
+```
+Replace 'YOUR_API_KEY' with your actual SendGrid API key.
+
 Щоб запустити програму, скопіюйте та вставте наступну команду у термінал:
 
 ```bash
