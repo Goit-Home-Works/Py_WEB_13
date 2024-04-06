@@ -3,7 +3,6 @@ FROM python:3.11
 
 # Set environment variables
 ENV APP_HOME /app
-ENV PORT 9000
 
 # Set the working directory inside the container
 WORKDIR $APP_HOME
@@ -18,8 +17,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Set the execution permissions for the run script
-COPY run.sh run.sh
-RUN chmod +x run.sh
+# COPY run.sh run.sh
+# RUN chmod +x run.sh
 
 # Define the command to run the application when the container starts
-CMD ["./run.sh"]
+# CMD ["./run.sh"]
+CMD ["python", "./src/main.py"]

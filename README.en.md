@@ -48,3 +48,34 @@ python3 src/main.py
 ```
 
 After that, click on API DOC button.
+
+
+## OR in docker:
+## Installation and launch
+### Prepare to change the .env environment
+Based on the example [.env_example](.env-example), create files with your individual data:
+- .env (defines APP_ENV that defines the current working file is prod, dev)
+- .env-dev (Settings for dev)
+- .env-prod (Settings for prod)
+
+Run the script:
+
+```
+docker compose --env-file .env-dev --file docker-compose-db.yml up -d
+cd ./src && alembic upgrade head
+```
+
+#### FastAPI server
+Run the script:
+```
+cd ./src
+uvicorn main:app --reload --port 9000
+```
+or
+```
+cd ./src
+python3 ./main.py
+```
+
+
+### Open the browser page http://localhost:9000
