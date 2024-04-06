@@ -13,8 +13,7 @@ print(f"{APP_ENV=}")
 print(f"POSTGRES_USERNAME={environ.get('POSTGRES_USERNAME')}")
 print(f"POSTGRES_PASSWORD={environ.get('POSTGRES_PASSWORD')}")
 print(f"POSTGRES_PORT={environ.get('POSTGRES_PORT')}")
-print(f"POSTGRES_DB={environ.get('POSTGRES_DB')}")
-
+print(f"POSTGRES_DATABASE={environ.get('POSTGRES_DATABASE')}")
 
 
 class Settings(BaseSettings):
@@ -46,7 +45,7 @@ class Settings(BaseSettings):
 
     @property
     def sqlalchemy_database_url(self) -> str:
-        return f"postgresql+psycopg2://{environ.get('POSTGRES_USERNAME')}:{environ.get('POSTGRES_PASSWORD')}@localhost:{environ.get('POSTGRES_PORT')}/{environ.get('POSTGRES_DB')}"
+        return f"postgresql+psycopg2://{environ.get('POSTGRES_USERNAME')}:{environ.get('POSTGRES_PASSWORD')}@localhost:{environ.get('POSTGRES_PORT')}/{environ.get('POSTGRES_DATABASE')}"
 
 settings = Settings()
 

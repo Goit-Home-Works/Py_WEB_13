@@ -30,6 +30,8 @@ asyncio = "^3.4.3"
 aiohttp = "^3.9.3"
 colorlog = "^6.8.2"
 cloudinary = "^1.39.1"
+poetry-plugin-export = "^1.7.1"
+fastapi-limiter = "^0.1.6"
 
 [build-system]
 requires = ["poetry-core"]
