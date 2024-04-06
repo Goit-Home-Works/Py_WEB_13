@@ -35,8 +35,8 @@ class Settings(BaseSettings):
     cloudinary_name: str = "some_name"
     cloudinary_api_key: str = "0000000000000"
     cloudinary_api_secret: str = "some_secret"
-    reate_limiter_times: int = 2
-    reate_limiter_seconds: int = 5
+    create_limiter_times: int = 2
+    create_limiter_seconds: int = 5
     sendgrid_api_key: str = ""
 
     class Config:

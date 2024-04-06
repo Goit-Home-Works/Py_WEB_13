@@ -12,37 +12,19 @@ import hashlib
 import secrets
 
 load_dotenv()
-# class PassCrypt:
-#     pwd_context: CryptContext
-
-#     def __init__(self, scheme: str = "bcrypt") -> None:
-#         self.pwd_context = CryptContext(schemes=[scheme], deprecated="auto")
-#         # print("init PassCrypt ", scheme, self.pwd_context)
-
-#     def verify_password(self, plain_password, hashed_password):
-#         return self.pwd_context.verify(plain_password, hashed_password)
-
-#     def get_password_hash(self, password: str):
-#         return self.pwd_context.hash(password)
-
-
 class PassCrypt:
-    def __init__(self, algorithm: str = "sha256") -> None:
-        self.algorithm = algorithm
+    pwd_context: CryptContext
+
+    def __init__(self, scheme: str = "bcrypt") -> None:
+        self.pwd_context = CryptContext(schemes=[scheme], deprecated="auto")
+        # print("init PassCrypt ", scheme, self.pwd_context)
 
     def verify_password(self, plain_password, hashed_password):
-        return hashed_password == self.get_password_hash(
-            plain_password, hashed_password
-        )
+        return self.pwd_context.verify(plain_password, hashed_password)
 
-    def get_password_hash(self, password: str, salt: Optional[str] = None):
-        if salt is None:
-            salt = secrets.token_hex(16)  # Generate a random salt
-        salted_password = password + salt
-        hashed_password = hashlib.new(
-            self.algorithm, salted_password.encode()
-        ).hexdigest()
-        return hashed_password, salt
+    def get_password_hash(self, password: str):
+        return self.pwd_context.hash(password)
+
 
 
 class AuthToken(PassCrypt):

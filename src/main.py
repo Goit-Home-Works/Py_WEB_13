@@ -7,15 +7,49 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.depends import RateLimiter
+import redis.asyncio as redis
+from contextlib import asynccontextmanager
 import uvicorn
+import logging
+import colorlog
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from db.database import get_db
-from routes import contacts, auth
+from routes import contacts, auth, users
+from config.config import settings
 
-app = FastAPI()
+logger = logging.getLogger(f"{settings.app_name}")
+logger.setLevel(logging.DEBUG if settings.app_mode == "dev" else logging.INFO)
+handler = colorlog.StreamHandler()
+handler.setLevel(logging.DEBUG if settings.app_mode == "dev" else logging.INFO)
+handler.setFormatter(
+    colorlog.ColoredFormatter(
+        "%(yellow)s%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+)
+logger.addHandler(handler)
+
+
+# @app.on_event("startup")
+async def startup():
+    r = await redis.Redis(host=settings.redis_host, port=settings.redis_port, db=0)
+    await FastAPILimiter.init(r)
+    logger.debug("startup done")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.debug("lifespan before")
+    await startup()
+    yield
+    logger.debug("lifespan after")
+
+
+app = FastAPI(lifespan=lifespan)
 
 origins = ["http://localhost:3000"]
 
@@ -66,7 +100,7 @@ def healthchecker(db: Session = Depends(get_db)):
 
 app.include_router(contacts.router, prefix="/api")
 app.include_router(auth.router, prefix="/api/auth")
-
+app.include_router(users.router, prefix="/api")
 
 # Function to open the web browser
 def open_browser():

@@ -50,15 +50,18 @@ async def send_email(email: EmailStr, username: str, host: str):
 # import os
 # from sendgrid import SendGridAPIClient
 # from sendgrid.helpers.mail import Mail
-
-
+#
+#
 # async def send_email(email: EmailStr, username: str, host: str):
 #     try:
 #         token_verification = auth_service.create_email_token({"sub": email})
-
-#         with open("templates/confirm_email.html", "r") as file:
-#             html_content = file.read()
-
+#
+#         # file_path = ".templates/confirm_email.html" 
+#         # print(f"File path: {file_path}")
+#
+#         # with open(file_path, "r") as file:  
+#         #     html_content = file.read()
+#
 #         # Replace placeholders with actual values
 #         html_content = html_content.replace("{username}", username)
 #         html_content = html_content.replace("{host}", host)
@@ -71,10 +74,10 @@ async def send_email(email: EmailStr, username: str, host: str):
 #             html_content=html_content,
 #         )
 #         print(f"{message=}")
-
+#
 #         sg = SendGridAPIClient(os.environ.get("SENDGRID_API_KEY"))
 #         response = sg.send(message)
-
+#
 #         if response.status_code == 202:
 #             return {"message": "email has been set to sending query"}
 #         else:

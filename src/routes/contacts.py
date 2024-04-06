@@ -3,13 +3,14 @@ from typing import List
 from fastapi import Path, Depends, HTTPException, Query, status, APIRouter
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from fastapi_limiter.depends import RateLimiter
 
 from db.database import get_db
 from schemas.contact import ContactFavoriteModel, ContactModel, ContactResponse
 from repository import contacts as repository_contacts
 from db.models import User
 from routes import auth
-
+from config.config import settings
 
 router = APIRouter(prefix="/contacts", tags=["contacts"])
 
@@ -33,7 +34,7 @@ async def search_contacts(
             "skip": skip,
             "limit": limit,
         }
-        user_id: int = current_user.id # type: ignore
+        user_id: int = current_user.id  # type: ignore
         contacts = await repository_contacts.search_contacts(param, user_id, db)
     if contacts is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
@@ -55,7 +56,7 @@ async def search_contacts_birthday(
             "skip": skip,
             "limit": limit,
         }
-        contacts = await repository_contacts.search_birthday(param, current_user.id, db)
+        contacts = await repository_contacts.search_birthday(param, current_user.id, db)  # type: ignore
     if contacts is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     return contacts
@@ -70,7 +71,7 @@ async def get_contacts(
     current_user: User = Depends(auth.get_current_user),
 ):
     contacts = await repository_contacts.get_contacts(
-        db=db, user_id=current_user.id, skip=skip, limit=limit, favorite=favorite
+        db=db, user_id=current_user.id, skip=skip, limit=limit, favorite=favorite  # type: ignore
     )
     return contacts
 
@@ -81,13 +82,26 @@ async def get_contact(
     db: Session = Depends(get_db),
     current_user: User = Depends(auth.get_current_user),
 ):
-    contact = await repository_contacts.get_contact_by_id(contact_id, current_user.id, db)
+    contact = await repository_contacts.get_contact_by_id(contact_id, current_user.id, db)  # type: ignore
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     return contact
 
 
-@router.post("", response_model=ContactResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=ContactResponse,
+    status_code=status.HTTP_201_CREATED,
+    description=f"No more than  {settings.create_limiter_times} requests per {settings.create_limiter_seconds} seconds",
+    dependencies=[
+        Depends(
+            RateLimiter(
+                times=settings.create_limiter_times,
+                seconds=settings.create_limiter_seconds,
+            )
+        )
+    ],
+)
 async def create_contact(
     body: ContactModel,
     db: Session = Depends(get_db),
@@ -114,7 +128,7 @@ async def update_contact(
     db: Session = Depends(get_db),
     current_user: User = Depends(auth.get_current_user),
 ):
-    contact = await repository_contacts.update(contact_id, body, current_user.id, db)
+    contact = await repository_contacts.update(contact_id, body, current_user.id, db)  # type: ignore
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     return contact
@@ -127,7 +141,7 @@ async def favorite_update(
     db: Session = Depends(get_db),
     current_user: User = Depends(auth.get_current_user),
 ):
-    contact = await repository_contacts.favorite_update(contact_id, body, current_user.id, db)
+    contact = await repository_contacts.favorite_update(contact_id, body, current_user.id, db)  # type: ignore
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     return contact
@@ -143,7 +157,7 @@ async def remove_contact(
     db: Session = Depends(get_db),
     current_user: User = Depends(auth.get_current_user),
 ):
-    contact = await repository_contacts.delete(contact_id, current_user.id, db)
+    contact = await repository_contacts.delete(contact_id, current_user.id, db)  # type: ignore
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     return None

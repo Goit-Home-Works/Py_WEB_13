@@ -1,10 +1,16 @@
 from datetime import date, timedelta
+import logging
+from typing import List
 
+import sqlalchemy
 from sqlalchemy.orm import Session
 
+from config.config import settings
 from schemas.contact import ContactModel, ContactFavoriteModel
 from db.models import Contact
 
+
+logger = logging.getLogger(f"{settings.app_name}.{__name__}")
 
 async def get_contacts(
     db: Session, user_id: int, skip: int, limit: int, favorite: bool | None = None
@@ -82,13 +88,50 @@ async def search_contacts(param: dict, user_id: int, db: Session):
     return contacts
 
 
-async def search_birthday(param: dict, user_id: int, db: Session):
+def date_replace_year(d: date, year: int) -> date:
+    try:
+        d = d.replace(year=year)
+    except ValueError as err:
+        logger.debug(f"date_replace_year b:  {d}")
+        d = d + timedelta(days=1)
+        d = d.replace(year=year)
+        logger.debug(f"date_replace_year a:  {d}")
+    return d
+
+
+# SELECT * FROM public.contacts where user_id = 6 and EXTRACT(MONTH FROM contacts.birthday) IN (1,2,3);
+
+
+async def search_birthday(param: dict, user_id: int, db: Session) -> List[Contact]:
     days: int = int(param.get("days", 7)) + 1
-    filter_afetr = date.today()
-    filter_before = date.today() + timedelta(days=days)
-    query = db.query(Contact).filter_by(user_id=user_id)
-    query = query.filter(
-        Contact.birthday > filter_afetr, Contact.birthday <= filter_before
+    date_now = date.today()
+    date_now_year = date_now.year
+    date_now_month = date_now.month
+    date_last_month = (date_now + timedelta(days=days + 1)).month
+    # logger.debug(f"{date_now_month=}, ${date_last_month=} {date_now + timedelta(days=days+1)}")
+    list_month = [date_now_month]
+    while date_last_month != date_now_month:
+        # logger.debug(f"{date_last_month=}, {date_now_month=}")
+        list_month.append(date_last_month)
+        date_last_month = 12 if date_last_month <= 1 else date_last_month - 1
+
+    contacts = []
+    query = (
+        sqlalchemy.select(Contact)
+        .where(Contact.user_id == user_id, sqlalchemy.extract("MONTH", Contact.birthday).in_(list_month))  # type: ignore
+        .order_by(sqlalchemy.desc(Contact.birthday))  # type: ignore
     )
-    contacts = query.offset(param.get("skip")).limit(param.get("limit"))
-    return contacts
+    contacts_q = db.execute(query).scalars()
+    for contact in contacts_q:
+        birthday: date | None = contact.birthday  # type: ignore
+        if birthday is not None:
+            bd = date_replace_year(birthday, date_now_year)
+            if bd < date_now:
+                bd = date_replace_year(birthday, date_now_year + 1)
+            diff_bd = bd - date_now
+            if diff_bd.days <= days:
+                logger.debug(f"f{str(contact)=}")
+                contacts.append(contact)
+    skip = int(param.get("skip", 0))
+    limit = int(param.get("limit", 0))
+    return contacts[skip : skip + limit]

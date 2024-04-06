@@ -1,4 +1,5 @@
 from typing import Annotated, Any, List
+import logging
 from fastapi import (
     APIRouter,
     Depends,
@@ -19,14 +20,19 @@ from fastapi.security import (
 )
 from sqlalchemy.orm import Session
 
+from config.config import settings
 from db.database import get_db
 from db.models import User
-from schemas.user import UserResponse, UserModel
+from schemas.user import UserResponse, UserDetailResponse, UserModel
 from services.auth import auth_service
 from repository import auth as repository_auth
 from repository import users as repository_users
 from schemas.auth import AccessTokenRefreshResponse
 from services.emails import send_email
+
+from schemas.auth import RequestEmail
+
+logger = logging.getLogger(f"{settings.app_name}.{__name__}")
 
 router = APIRouter(prefix="", tags=["Auth"])
 
@@ -37,7 +43,7 @@ SET_COOKIES = False
 
 @router.post(
     "/signup",
-    response_model=UserResponse,
+    response_model=UserDetailResponse,
     response_model_exclude_none=True,
     status_code=status.HTTP_201_CREATED,
 )
@@ -63,62 +69,30 @@ async def signup(
     }
 
 
-# @router.post(
-#     "/signup",
-#     response_model=UserResponse,
-#     response_model_exclude_none=True,
-#     status_code=status.HTTP_201_CREATED,
-# )
-# async def signup(
-#     body: UserModel,
-#     bt: BackgroundTasks,
-#     request: Request,
-#     db: Session = Depends(get_db),
-# ):
-#     new_user = await repository_auth.signup(body=body, db=db)
-#     print(
-#         f"New user details: new_user= {new_user}"
-#     )
-#     if new_user is None:
-#         raise HTTPException(
-#             status_code=status.HTTP_409_CONFLICT, detail="Account already exists"
-#         )
-
-#     try:
-#         user = await repository_users.get_user_by_name(body.username, db)
-#         print(f"get_user_by_name2: ", user)
-#         if user is not None:
-#             user_id = user.id
-#         else:
-#             user_id = None  # Assign a default value if user is None
-#     except Exception:
-#         print("ERROR")
-#         user_id = None  # Assign a default value in case of exception
-
-#     if user_id is not None:
-#         new_user.id = user_id
-
-#     bt.add_task(
-#         send_email, str(new_user.email), str(new_user.username), str(request.base_url)
-#     )
-
-#     return {
-#         "user": new_user,
-#         "detail": "User successfully created. Check your email for confirmation.",
-#     }
-
-
-# Annotated[OAuth2PasswordRequestForm, Depends()]
-# auth_response_model = Depends()
 @router.post("/login", response_model=AccessTokenRefreshResponse)
 async def login(
     response: Response,
-    body: Annotated[OAuth2PasswordRequestForm, Depends()],
+    body: Annotated[auth_service.auth_response_model, Depends()],  # type: ignore
     db: Session = Depends(get_db),
 ):
-    token = await repository_auth.login(
-        username=body.username, password=body.password, db=db
-    )
+    print(f"{body.username=}")
+    user = await repository_users.get_user_by_email(body.username, db)
+    print(f"{user.confirmed=}")
+    if user is None:
+        exception_data = {
+            "status_code": status.HTTP_401_UNAUTHORIZED,
+            "detail": "Invalid credentianal",
+        }
+        raise HTTPException(**exception_data)
+    if not bool(user.confirmed):
+        exception_data = {
+            "status_code": status.HTTP_401_UNAUTHORIZED,
+            "detail": "Not confirmed",
+        }
+        raise HTTPException(**exception_data)
+
+    token = repository_auth.login(user=user, password=body.password, db=db)
+    print(f"{token=}")
     if token is None:
         exception_data = {
             "status_code": status.HTTP_401_UNAUTHORIZED,
@@ -217,90 +191,23 @@ async def get_current_user(
     return user
 
 
-async def get_current_user_dbtoken(
-    response: Response,
-    access_token: Annotated[str | None, Cookie()] = None,
-    refresh_token: Annotated[str | None, Cookie()] = None,
-    token: str | None = Depends(repository_auth.auth_service.auth_scheme),
-    db: Session = Depends(get_db),
-) -> User | None:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={
-            "WWW-Authenticate": "Bearer",
-            "set-cookie": response.headers["set-cookie"],
-        },
-    )
-    user = None
-    new_access_token = None
-    print(f"{access_token=}, {refresh_token=}")
-    if not token:
-        token = access_token
-    if token:
-        user = await repository_auth.a_get_current_user(token, db)
-        if not user and refresh_token:
-            email = await repository_auth.auth_service.decode_refresh_token(
-                refresh_token
-            )
-            user = await repository_users.get_user_by_email(str(email), db)
-            # print(f"refresh_access_token {email=} {user.email} {user.refresh_token}")  # type: ignore
-            if refresh_token == user.refresh_token:  # type: ignore
-                result = await refresh_access_token(refresh_token)
-                print(f"refresh_access_token  {result=}")
-                if result:
-                    new_access_token = result.get("access_token")
-                    email = result.get("email")
-                    user = await repository_users.get_user_by_email(str(email), db)
-                    if SET_COOKIES:
-                        if new_access_token:
-                            response.set_cookie(
-                                key="access_token",
-                                value=new_access_token,
-                                httponly=True,
-                                path="/api/",
-                                expires=result.get("expire_token"),
-                            )
-                        else:
-                            response.delete_cookie(
-                                key="access_token", httponly=True, path="/api/"
-                            )
-            else:
-                await repository_users.update_user_refresh_token(user, "", db)
-                response.delete_cookie(key="refresh_token", httponly=True, path="/api/")
-                user = None
-    if user is None:
-        raise credentials_exception
-    return user
-
-
 @router.get("/secret")
 async def read_item(current_user: User = Depends(get_current_user)):
     auth_result = {"email": current_user.email}
     return {"message": "secret router", "owner": auth_result}
 
 
-@router.get("/secret_dbtoken")
-async def read_item_dbtoken(current_user: User = Depends(get_current_user_dbtoken)):
-    auth_result = {"email": current_user.email}
-    return {"message": "secret router", "owner": auth_result}
-
-
 async def refresh_access_token(refresh_token: str) -> dict[str, Any] | None:
     if refresh_token:
-        email = await repository_auth.auth_service.decode_refresh_token(refresh_token)
-        if email:
-            (
-                access_token,
-                expire_token,
-            ) = await repository_auth.auth_service.create_access_token(
-                data={"sub": email}
-            )
-            return {
-                "access_token": access_token,
-                "expire_token": expire_token,
-                "email": email,
-            }
+        email = auth_service.decode_refresh_token(refresh_token)
+        access_token, expire_token = auth_service.create_access_token(
+            data={"sub": email}
+        )
+        return {
+            "access_token": access_token,
+            "expire_token": expire_token,
+            "email": email,
+        }
     return None
 
 
@@ -312,11 +219,11 @@ async def refresh_token(
     db: Session = Depends(get_db),
 ):
     token: str = credentials.credentials
-    print(f"refresh_token {token=}")
+    logger.info(f"refresh_token {token=}")
     if not token and refresh_token:
         token = refresh_token
-    email = await repository_auth.auth_service.decode_refresh_token(token)
-    print(f"refresh_token {email=}")
+    email = auth_service.decode_refresh_token(token)
+    logger.info(f"refresh_token {email=}")
     user: User | None = await repository_users.get_user_by_email(email, db)
     if user and user.refresh_token != token:  # type: ignore
         await repository_users.update_user_refresh_token(user, None, db)
@@ -328,15 +235,12 @@ async def refresh_token(
                 "set-cookie": response.headers.get("set-cookie", ""),
             },
         )
-
-    (
-        new_access_token,
-        expire_access_token,
-    ) = await repository_auth.auth_service.create_access_token(data={"sub": email})
-    (
-        new_refresh_token,
-        expire_refresh_token,
-    ) = await repository_auth.auth_service.create_refresh_token(data={"sub": email})
+    new_access_token, expire_access_token = auth_service.create_access_token(
+        data={"sub": email}
+    )
+    new_refresh_token, expire_refresh_token = auth_service.create_refresh_token(
+        data={"sub": email}
+    )
     await repository_users.update_user_refresh_token(user, new_refresh_token, db)
     if SET_COOKIES:
         if new_access_token:
@@ -377,7 +281,24 @@ async def confirmed_email(token: str, db: Session = Depends(get_db)):
             if bool(user.confirmed):
                 return {"message": "Your email is already confirmed"}
             await repository_users.confirmed_email(email, db)
-            return {"message": "Email confirmed successfully"}
+            return {"message": "Email confirmed"}
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST, detail="Verification error"
     )
+
+
+@router.post("/request_email")
+async def request_email(
+    body: RequestEmail,
+    background_tasks: BackgroundTasks,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    user = await repository_users.get_user_by_email(body.email, db)
+    if user:
+        if bool(user.confirmed):
+            return {"message": "Your email is already confirmed"}
+        background_tasks.add_task(
+            send_email, str(user.email), str(user.username), str(request.base_url)
+        )
+    return {"message": "Check your email for confirmation."}
