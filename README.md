@@ -64,6 +64,12 @@ docker compose  --env-file .env-dev --file docker-compose-db.yml  up -d
 cd ./src && alembic upgrade head 
 ```
 
+```
+sudo chmod 777 /home/sergio/Desktop/Py_WEB_13/.postgres-data
+```
+
+
+
 #### FastAPI server
 Виконати скрипт:
 ```
