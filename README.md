@@ -66,6 +66,16 @@ cd ./src && alembic upgrade head
 
 ```
 sudo chmod 777 /home/sergio/Desktop/Py_WEB_13/.postgres-data
+
+
+sudo chown -R <username>:<group> /home/sergio/Desktop/Py_WEB_13/postgres-data
+
+whoami
+
+groups
+
+
+
 ```
 
 
