@@ -75,6 +75,10 @@ whoami
 groups
 
 
+sudo ls -l /home/sergio/Desktop/Custom_inst/postgres-data
+sudo chown -R sergio:sergio /home/sergio/Desktop/Custom_inst/postgres-data
+
+
 
 ```
 
